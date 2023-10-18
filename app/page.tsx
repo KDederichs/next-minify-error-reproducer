@@ -1,6 +1,70 @@
+'use client'
 import Image from 'next/image'
+import {useDropzone} from "react-dropzone";
+import {
+  useCallback,
+  useState
+} from "react";
+
+ const fileSizeValidator = (
+    file: File,
+): null | { code: string; message: string } => {
+  if (file.size > 5 * 1024 * 1024) {
+    return {
+      code: 'file-to-big',
+      message: `Das Bild darf nicht größer als 5MB sein`,
+    }
+  }
+
+  return null
+}
 
 export default function Home() {
+
+  const [isDragOver, setDragOver] = useState(false)
+
+  const onDragEnter = useCallback(() => {
+    setDragOver(true)
+  }, [])
+
+  const onDragLeave = useCallback(() => {
+    setDragOver(false)
+  }, [])
+
+  const onAvatarDrop = useCallback((acceptedFiles: File[]) => {
+    acceptedFiles.forEach((file) => {
+      const reader = new FileReader()
+      reader.onabort = () => {
+        console.log('avatar upload abort')
+      }
+      reader.onerror = () => {
+        console.log('avatar upload error')
+      }
+      reader.onload = () => {
+        const result = reader.result
+        console.log(result)
+        if (typeof result !== 'string') {
+          return
+        }
+        const base64Part = result.split(',')[1]
+        // DO nice things with it :)
+      }
+      reader.readAsDataURL(file)
+    })
+  }, [])
+
+
+  const { getRootProps: avatarRootProps, getInputProps: avatarInputProps } =
+      useDropzone({
+        onDrop: onAvatarDrop,
+        accept: {
+          'image/png': ['.png', '.jpg', '.jpeg'],
+        },
+        validator: fileSizeValidator,
+        multiple: false,
+        onDragEnter,
+        onDragLeave,
+      })
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
@@ -25,6 +89,18 @@ export default function Home() {
               priority
             />
           </a>
+        </div>
+      </div>
+
+      <div
+          {...avatarRootProps()}
+      >
+        <input {...avatarInputProps()} />
+
+        <div>
+                    <span className="mt-2 block text-sm font-semibold text-gray-900">
+                  Profil Foto hochladen
+                </span>
         </div>
       </div>
 
